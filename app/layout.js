@@ -1,6 +1,8 @@
 import localFont from "next/font/local";
 import "./globals.css";
 
+export const fetchCache = 'force-no-store';
+
 export const metadata = {
   title: "ColorCraft",
 };
