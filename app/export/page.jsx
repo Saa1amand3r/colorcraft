@@ -6,15 +6,16 @@ export default function ExportPage() {
     // Function to handle downloading the CSV file
     const handleDownloadCSV = async () => {
         try {
-            const timestamp = Date.parse(new Date().toString());
-            const response = await fetch(`/api/export-questions?tid=${timestamp}`,
-                {cache: 'no-store'});
+            // Fetch CSV with timestamp query parameter to force cache invalidation
+            const response = await fetch(`/api/export-questions?ts=${Date.now()}`, {
+                cache: 'no-store',  // Make sure to disable browser caching as well
+            });
 
             if (response.ok) {
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
 
-                // Create a temporary anchor element to trigger the download
+                // Trigger download of the file
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = 'questions.csv';
@@ -28,6 +29,7 @@ export default function ExportPage() {
             console.error('Error downloading CSV:', error);
         }
     };
+
 
     return (
         <div className="p-4">

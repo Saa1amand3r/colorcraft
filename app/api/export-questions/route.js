@@ -35,3 +35,4 @@ export const GET = async (req) => {
         return new Response('Error exporting data', { status: 500 });
     }
 };
+export const revalidate = 0;  
