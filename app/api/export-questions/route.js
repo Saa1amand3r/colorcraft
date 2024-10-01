@@ -17,13 +17,18 @@ export const GET = async (req) => {
         // Combine headers and data
         const csvContent = csvHeaders + csvData;
 
-        // Return the CSV data as a downloadable file
+        const headers = new Headers({
+            'Content-Type': 'text/csv',
+            'Content-Disposition': 'attachment; filename="questions.csv"',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Surrogate-Control': 'no-store',
+        });
+
         return new Response(csvContent, {
             status: 200,
-            headers: {
-                'Content-Type': 'text/csv',
-                'Content-Disposition': 'attachment; filename="questions.csv"',
-            },
+            headers: headers,
         });
     } catch (error) {
         console.error('Error fetching questions:', error);
