@@ -6,7 +6,8 @@ export default function ExportPage() {
     // Function to handle downloading the CSV file
     const handleDownloadCSV = async () => {
         try {
-            const response = await fetch('/api/export-questions',
+            const timestamp = Date.parse(new Date().toString());
+            const response = await fetch(`/api/export-questions?tid=${timestamp}`,
                 {cache: 'no-store'});
 
             if (response.ok) {
