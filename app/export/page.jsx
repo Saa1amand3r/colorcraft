@@ -1,5 +1,7 @@
 'use client';
 
+export const fetchCache = 'force-no-store';
+
 export default function ExportPage() {
     // Function to handle downloading the CSV file
     const handleDownloadCSV = async () => {
