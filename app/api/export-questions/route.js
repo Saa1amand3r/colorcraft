@@ -5,34 +5,23 @@ export const GET = async (req) => {
     await connectDB();
 
     try {
-        // Fetch all questions from the database
         const questions = await Question.find({});
 
-        // Define CSV headers, now including userId
-        const csvHeaders = 'UserId, Color 1, Color 2, Rating\n';
+        const csvHeaders = 'UserId, R1, G1, B1, R2, G2, B2, Formal, Informal, Basic, Extravagant\n';
+        const csvData = questions.map(q =>
+            `${q.userId}, ${q.r1}, ${q.g1}, ${q.b1}, ${q.r2}, ${q.g2}, ${q.b2}, ${q.formal}, ${q.informal}, ${q.basic}, ${q.extravagant}`
+        ).join('\n');
 
-        // Generate CSV data
-        const csvData = questions.map(q => `${q.userId}, ${q.color1}, ${q.color2}, ${q.rating}`).join('\n');
-
-        // Combine headers and data
         const csvContent = csvHeaders + csvData;
 
         const headers = new Headers({
             'Content-Type': 'text/csv',
-            'Content-Disposition': 'attachment; filename="questions.csv"',
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Surrogate-Control': 'no-store',
+            'Content-Disposition': 'attachment; filename="color_ratings.csv"',
         });
 
-        return new Response(csvContent, {
-            status: 200,
-            headers: headers,
-        });
+        return new Response(csvContent, { status: 200, headers });
     } catch (error) {
-        console.error('Error fetching questions:', error);
+        console.error('Error exporting data:', error);
         return new Response('Error exporting data', { status: 500 });
     }
 };
-export const revalidate = 0;  

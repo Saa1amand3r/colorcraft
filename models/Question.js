@@ -1,9 +1,16 @@
 import { Schema, model, models } from 'mongoose';
 
 const QuestionSchema = new Schema({
-    color1: { type: String, required: true },
-    color2: { type: String, required: true },
-    rating: { type: Number, required: true },
+    r1: { type: Number, required: true },
+    g1: { type: Number, required: true },
+    b1: { type: Number, required: true },
+    r2: { type: Number, required: true },
+    g2: { type: Number, required: true },
+    b2: { type: Number, required: true },
+    formal: { type: Number, required: true },
+    informal: { type: Number, required: true },
+    basic: { type: Number, required: true },
+    extravagant: { type: Number, required: true },
     userId: { type: Number, required: true }  // New field to store userId
 }, {
     timestamps: true

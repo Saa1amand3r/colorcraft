@@ -6,32 +6,34 @@ export const POST = async (req) => {
     await connectDB();
 
     try {
-        // Extracting the form data
         const formData = await req.formData();
-        const entries = Array.from(formData.entries()); // Convert formData to an array of entries
-        const ratings = entries.map(([key, value]) => JSON.parse(value)); // Assuming the data is sent as JSON strings
+        const entries = Array.from(formData.entries());
 
-        // Get the current `userId` from the UserCounter model
         let userCounter = await UserCounter.findOne({});
         if (!userCounter) {
-            // Initialize if no userId exists
             userCounter = new UserCounter({ lastUserId: 0 });
         }
 
-        const userId = userCounter.lastUserId + 1; // Increment userId for this submission
+        const userId = userCounter.lastUserId + 1;
 
-        // Save each rating in the database with the userId
-        for (const entity of ratings) {
+        for (const [key, value] of entries) {
+            const entity = JSON.parse(value);
             const newQuestion = new Question({
-                color1: entity.firstColor,
-                color2: entity.secondColor,
-                rating: entity.rating,
-                userId: userId, // Attach userId to each entry
+                r1: entity.r1,
+                g1: entity.g1,
+                b1: entity.b1,
+                r2: entity.r2,
+                g2: entity.g2,
+                b2: entity.b2,
+                formal: entity.formal,
+                informal: entity.informal,
+                basic: entity.basic,
+                extravagant: entity.extravagant,
+                userId: userId
             });
             await newQuestion.save();
         }
 
-        // Update the `userId` counter in the UserCounter collection
         userCounter.lastUserId = userId;
         await userCounter.save();
 

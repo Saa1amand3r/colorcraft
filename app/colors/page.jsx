@@ -19,32 +19,32 @@ const colorDistance = (color1, color2) => {
 
 const ColorsPage = () => {
     const [colors, setColors] = useState([
-        { referenceColor: "#FF0000", interval: { start: "#990000", end: "#FF6666" }, name: "Pure Red" },
-        { referenceColor: "#8B0000", interval: { start: "#660000", end: "#993333" }, name: "Dark Red" },
-        { referenceColor: "#FFC0CB", interval: { start: "#FFB6B6", end: "#FFDDE5" }, name: "Pink" },
-        { referenceColor: "#FFB6C1", interval: { start: "#FFA3A3", end: "#FFCCCC" }, name: "Light Pink" },
-        { referenceColor: "#FFA500", interval: { start: "#CC6600", end: "#FFCC66" }, name: "Pure Orange" },
-        { referenceColor: "#FF8C00", interval: { start: "#B35900", end: "#FFA64D" }, name: "Dark Orange" },
-        { referenceColor: "#FFDAB9", interval: { start: "#FFD1A3", end: "#FFE5CC" }, name: "Peach" },
-        { referenceColor: "#FFFF00", interval: { start: "#CCCC00", end: "#FFFF66" }, name: "Pure Yellow" },
-        { referenceColor: "#FFD700", interval: { start: "#BFA500", end: "#FFE066" }, name: "Gold" },
-        { referenceColor: "#E1AD01", interval: { start: "#B28F00", end: "#EBB933" }, name: "Mustard Yellow" },
-        { referenceColor: "#00FF00", interval: { start: "#00CC00", end: "#66FF66" }, name: "Pure Green" },
-        { referenceColor: "#006400", interval: { start: "#003300", end: "#339933" }, name: "Dark Green" },
-        { referenceColor: "#32CD32", interval: { start: "#00A300", end: "#66E066" }, name: "Lime Green" },
-        { referenceColor: "#808000", interval: { start: "#666600", end: "#999933" }, name: "Olive Green" },
-        { referenceColor: "#0000FF", interval: { start: "#0000CC", end: "#6666FF" }, name: "Pure Blue" },
-        { referenceColor: "#000080", interval: { start: "#000033", end: "#333399" }, name: "Navy Blue" },
-        { referenceColor: "#87CEEB", interval: { start: "#66B3D9", end: "#A0E4FF" }, name: "Sky Blue" },
-        { referenceColor: "#00FFFF", interval: { start: "#00CCCC", end: "#66FFFF" }, name: "Cyan" },
-        { referenceColor: "#800080", interval: { start: "#660066", end: "#993399" }, name: "Pure Purple" },
-        { referenceColor: "#E6E6FA", interval: { start: "#CCCCE6", end: "#F2F2FF" }, name: "Lavender" },
-        { referenceColor: "#4B0082", interval: { start: "#3A0066", end: "#660099" }, name: "Dark Purple" },
-        { referenceColor: "#A52A2A", interval: { start: "#662222", end: "#B35959" }, name: "Brown" },
-        { referenceColor: "#D2B48C", interval: { start: "#B89975", end: "#E3C6AA" }, name: "Light Brown" },
-        { referenceColor: "#808080", interval: { start: "#666666", end: "#B3B3B3" }, name: "Grey" },
-        { referenceColor: "#000000", interval: { start: "#000000", end: "#333333" }, name: "Black" },
-        { referenceColor: "#FFFFFF", interval: { start: "#EDEDED", end: "#FFFFFF" }, name: "White" }
+        { referenceColor: "#FF0000", name: "Pure Red" },
+        { referenceColor: "#8B0000", name: "Dark Red" },
+        { referenceColor: "#FFC0CB", name: "Pink" },
+        { referenceColor: "#E31C79", name: "Hot Pink"},
+        { referenceColor: "#FFA500", name: "Pure Orange" },
+        { referenceColor: "#F95923", name: "Red Orange"},
+        { referenceColor: "#F7A28B", name: "Peach" },
+        { referenceColor: "#FCFCB6", name: "Light Yellow" },
+        { referenceColor: "#E1AD01", name: "Mustard Yellow" },
+        { referenceColor: "#006400", name: "Dark Green" },
+        { referenceColor: "#aeff7a", name: "Pastel Green"},
+        { referenceColor: "#32CD32", name: "Green" },
+        { referenceColor: "#808000", name: "Olive Green" },
+        { referenceColor: "#0000FF", name: "Pure Blue" },
+        { referenceColor: "#000080", name: "Navy Blue" },
+        { referenceColor: "#87CEEB", name: "Sky Blue" },
+        { referenceColor: "#00FFFF", name: "Cyan" },
+        { referenceColor: "#800080", name: "Pure Purple" },
+        { referenceColor: "#E6E6FA", name: "Lavender" },
+        { referenceColor: "#4B0082", name: "Dark Purple" },
+        { referenceColor: "#7B5737", name: "Brown" },
+        { referenceColor: "#C26565", name: "Dark Pink" },
+        { referenceColor: "#D2B48C", name: "Light Brown" },
+        { referenceColor: "#808080", name: "Grey" },
+        { referenceColor: "#000000", name: "Black" },
+        { referenceColor: "#FFFFFF", name: "White" }
     ]);
 
     const [selectedColor, setSelectedColor] = useState(colors[0]);
@@ -54,8 +54,6 @@ const ColorsPage = () => {
     // State for new color form
     const [newColor, setNewColor] = useState({
         referenceColor: "#000000",
-        intervalStart: "#000000",
-        intervalEnd: "#FFFFFF",
         name: "",
     });
 
@@ -104,16 +102,38 @@ const ColorsPage = () => {
             ...prev,
             {
                 referenceColor: newColor.referenceColor,
-                interval: { start: newColor.intervalStart, end: newColor.intervalEnd },
                 name: newColor.name,
             },
         ]);
-        setNewColor({ referenceColor: "#000000", intervalStart: "#000000", intervalEnd: "#FFFFFF", name: "" }); // Reset form
+        setNewColor({ referenceColor: "#000000", name: "" }); // Reset form
     };
 
     const removeColor = (name) => {
         setColors((prev) => prev.filter((color) => color.name !== name));
     };
+
+    const saveColorsToDatabase = async () => {
+        try {
+            const response = await fetch('/api/save-colors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ colors }), // Send all colors
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log("Colors saved successfully!");
+            } else {
+                console.error("Failed to save colors:", result.message);
+            }
+        } catch (error) {
+            console.error("Error saving colors:", error);
+        }
+    };
+
 
     return (
         <div className="flex flex-col items-center p-6 bg-gray-100 min-h-screen">
@@ -122,13 +142,7 @@ const ColorsPage = () => {
             <div className="flex flex-col items-center mb-4">
                 <div
                     className="h-24 w-24 mb-2 rounded border border-gray-300"
-                    style={{ backgroundColor: selectedColor.referenceColor }}
-                ></div>
-                <div
-                    style={{
-                        background: `linear-gradient(to right, ${selectedColor.interval.start}, ${selectedColor.interval.end})`
-                    }}
-                    className="h-24 w-96 rounded border border-gray-300"
+                    style={{backgroundColor: selectedColor.referenceColor}}
                 ></div>
                 <select onChange={change} className="mt-4 p-2 border border-gray-300 rounded">
                     {colors.map((value, key) => (
@@ -151,9 +165,11 @@ const ColorsPage = () => {
                         className="w-full h-12 border border-gray-300 rounded mb-2"
                     />
                     <h3 className="text-md font-semibold mb-1">Color you picked:</h3>
-                    <div className="w-24 h-24 mb-2 rounded border border-gray-300" style={{ backgroundColor: inputColor }}></div>
+                    <div className="w-24 h-24 mb-2 rounded border border-gray-300"
+                         style={{backgroundColor: inputColor}}></div>
                     <h3 className="text-md font-semibold mb-1">Closest matching color ({correspondingColor.name}):</h3>
-                    <div className="w-24 h-24 mb-2 rounded border border-gray-300" style={{ backgroundColor: correspondingColor.referenceColor }}></div>
+                    <div className="w-24 h-24 mb-2 rounded border border-gray-300"
+                         style={{backgroundColor: correspondingColor.referenceColor}}></div>
                 </div>
             </div>
 
@@ -183,28 +199,6 @@ const ColorsPage = () => {
                             className="w-full h-12 border border-gray-300 rounded"
                         />
                     </div>
-                    <div className="mb-4">
-                        <label className="block mb-1">Interval Start (HEX):</label>
-                        <input
-                            type="color"
-                            name="intervalStart"
-                            value={newColor.intervalStart}
-                            onChange={handleNewColorChange}
-                            required
-                            className="w-full h-12 border border-gray-300 rounded"
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label className="block mb-1">Interval End (HEX):</label>
-                        <input
-                            type="color"
-                            name="intervalEnd"
-                            value={newColor.intervalEnd}
-                            onChange={handleNewColorChange}
-                            required
-                            className="w-full h-12 border border-gray-300 rounded"
-                        />
-                    </div>
                     <button type="submit" className="bg-blue-500 text-white p-2 rounded w-full">Add Color</button>
                 </form>
             </div>
@@ -218,7 +212,7 @@ const ColorsPage = () => {
                             <div className="flex items-center">
                                 <div
                                     className="h-6 w-6 rounded mr-2"
-                                    style={{ backgroundColor: color.referenceColor }}
+                                    style={{backgroundColor: color.referenceColor}}
                                 ></div>
                                 <span>{color.name}</span>
                             </div>
@@ -227,6 +221,12 @@ const ColorsPage = () => {
                     ))}
                 </ul>
             </div>
+            <button
+                onClick={saveColorsToDatabase}
+                className="bg-green-500 text-white p-2 rounded mt-4">
+                Save All Colors to Database
+            </button>
+
         </div>
     );
 };

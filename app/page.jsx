@@ -1,54 +1,106 @@
 'use client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import RatingCircles from "@/app/ratingCircles";
+
+// Helper to convert hex to RGB
+const hexToRGB = (hex) => {
+    const bigint = parseInt(hex.slice(1), 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return { r, g, b };
+};
 
 export default function Home() {
-    const colors = ["#FFFF00", "#00FF00", "#FF0000", "#0000FF"];
-
-    // Function to generate all possible unique pairs of colors
-    const generateColorPairs = (colors) => {
-        let pairs = [];
-        for (let i = 0; i < colors.length; i++) {
-            for (let j = i + 1; j < colors.length; j++) {
-                pairs.push([colors[i], colors[j]]);
-            }
-        }
-        return pairs;
-    };
-
-    const colorPairs = generateColorPairs(colors);
-
-    // State to store the ratings with color information
+    const [colorPairs, setColorPairs] = useState([]);
+    const [groupedColorPairs, setGroupedColorPairs] = useState([]);
+    const [selectedGroup, setSelectedGroup] = useState(0);
     const [ratings, setRatings] = useState([]);
 
-    // Handle the change in rating for each color pair
-    const handleRatingChange = (index, color1, color2, value) => {
+    // Function to split color pairs into 5 groups
+    const splitIntoGroups = (pairs) => {
+        const groupSize = Math.ceil(pairs.length / 5);  // Split into 5 groups
+        const groups = [];
+        for (let i = 0; i < pairs.length; i += groupSize) {
+            groups.push(pairs.slice(i, i + groupSize));
+        }
+        return groups;
+    };
+
+    // Fetch color combinations from the database
+    const fetchColorCombinations = async () => {
+        try {
+            const response = await fetch('/api/save-colors');
+            if (!response.ok) throw new Error('Failed to fetch color combinations');
+            const data = await response.json();
+            const pairs = data.map(combination => [combination.hex1, combination.hex2]);
+            setColorPairs(pairs);
+
+            // Split the color pairs into groups and set them
+            const groups = splitIntoGroups(pairs);
+            setGroupedColorPairs(groups);
+        } catch (error) {
+            console.error('Error fetching combinations:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchColorCombinations();
+    }, []);
+
+    // Handle rating changes
+    const handleRatingChange = (index, category, color1, color2, value) => {
         const newRating = {
             firstColor: color1,
             secondColor: color2,
+            category: category,
             rating: value,
         };
 
         setRatings((prevRatings) => {
             const updatedRatings = [...prevRatings];
-            updatedRatings[index] = newRating;
+            updatedRatings[index] = updatedRatings[index] || {};
+            updatedRatings[index][category] = newRating;
             return updatedRatings;
         });
     };
 
-    // Handle form submission
+    // Handle group selection
+    const handleGroupSelection = (groupIndex) => {
+        setSelectedGroup(groupIndex);
+        setRatings([]); // Reset ratings when switching groups
+    };
+
+    // Submit the form
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         try {
-            // Create a FormData object
             const formData = new FormData();
 
-            // Append each rating to formData
-            ratings.forEach((rating, index) => {
-                formData.append(`rating-${index}`, JSON.stringify(rating));
+            // Extract RGB values and ratings for the current group
+            const currentGroup = groupedColorPairs[selectedGroup];
+            currentGroup.forEach((pair, index) => {
+                const rgb1 = hexToRGB(ratings[index]?.Formal?.firstColor || "");
+                const rgb2 = hexToRGB(ratings[index]?.Formal?.secondColor || "");
+
+                const combinedRating = {
+                    r1: rgb1.r,
+                    g1: rgb1.g,
+                    b1: rgb1.b,
+                    r2: rgb2.r,
+                    g2: rgb2.g,
+                    b2: rgb2.b,
+                    formal: ratings[index]?.Formal?.rating || 0,
+                    informal: ratings[index]?.Informal?.rating || 0,
+                    basic: ratings[index]?.Basic?.rating || 0,
+                    extravagant: ratings[index]?.Extravagant?.rating || 0,
+                };
+
+                formData.append(`rating-${index}`, JSON.stringify(combinedRating));
             });
 
-            // Send a POST request to the API route
+            // POST request to save the data
             const response = await fetch('/api/save-results', {
                 method: 'POST',
                 body: formData,
@@ -67,44 +119,59 @@ export default function Home() {
     return (
         <div className="p-4">
             <h1 className="text-xl mb-4">Rate Color Combinations</h1>
+
+            {/* Group Selection */}
+            <div className="mb-4">
+                <h2>Select a group to rate:</h2>
+                {[...Array(5)].map((_, groupIndex) => (
+                    <button
+                        key={groupIndex}
+                        onClick={() => handleGroupSelection(groupIndex)}
+                        className={`p-2 m-2 ${selectedGroup === groupIndex ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                    >
+                        Group {groupIndex + 1}
+                    </button>
+                ))}
+            </div>
+
+            {/* Display color combinations of the selected group */}
             <form onSubmit={handleSubmit}>
-                {colorPairs.map((pair, index) => (
-                    <div key={index} className="mb-4">
-                        <h2 className="text-lg mb-2">
-                            Rate how well these colors match:
-                        </h2>
+                {groupedColorPairs[selectedGroup]?.map((pair, index) => (
+                    <div key={index} className="mb-6">
+                        <h2 className="text-lg mb-2">Rate how well these colors match:</h2>
                         <div className="flex items-center mb-2">
-                            <div
-                                className="h-[50px] w-[50px] mr-4"
-                                style={{ backgroundColor: pair[0] }}
-                            ></div>
-                            <div
-                                className="h-[50px] w-[50px] mr-4"
-                                style={{ backgroundColor: pair[1] }}
-                            ></div>
+                            <div className="h-[50px] w-[50px] mr-4 border-2 border-black" style={{ backgroundColor: pair[0] }}></div>
+                            <div className="h-[50px] w-[50px] mr-4 border-2 border-black" style={{ backgroundColor: pair[1] }}></div>
                         </div>
-                        <label htmlFor={`rating-${index}`}>
-                            Rating (1-10):
-                        </label>
-                        <input
-                            type="number"
-                            id={`rating-${index}`}
-                            min="1"
-                            max="10"
-                            value={ratings[index]?.rating || ""}
-                            onChange={(e) =>
-                                handleRatingChange(index, pair[0], pair[1], e.target.value)
-                            }
-                            className="ml-2 p-1 border rounded"
+
+                        <RatingCircles
+                            title="Formal"
+                            ratings={ratings[index]?.Formal || 0}
+                            pair={pair}
+                            onRatingChange={(value) => handleRatingChange(index, "Formal", pair[0], pair[1], value)}
+                        />
+                        <RatingCircles
+                            title="Informal"
+                            ratings={ratings[index]?.Informal || 0}
+                            pair={pair}
+                            onRatingChange={(value) => handleRatingChange(index, "Informal", pair[0], pair[1], value)}
+                        />
+                        <RatingCircles
+                            title="Basic"
+                            ratings={ratings[index]?.Basic || 0}
+                            pair={pair}
+                            onRatingChange={(value) => handleRatingChange(index, "Basic", pair[0], pair[1], value)}
+                        />
+                        <RatingCircles
+                            title="Extravagant"
+                            ratings={ratings[index]?.Extravagant || 0}
+                            pair={pair}
+                            onRatingChange={(value) => handleRatingChange(index, "Extravagant", pair[0], pair[1], value)}
                         />
                     </div>
                 ))}
-                <button
-                    type="submit"
-                    className="bg-blue-500 text-white p-2 rounded"
-                >
-                    Submit
-                </button>
+
+                <button type="submit" className="bg-blue-500 text-white p-2 rounded">Submit</button>
             </form>
         </div>
     );
