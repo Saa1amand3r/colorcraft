@@ -12,6 +12,7 @@ const hexToRGB = (hex) => {
 };
 
 export default function Home() {
+    const [completed, setCompleted] = useState(false);
     const [colorPairs, setColorPairs] = useState([]);
     const [groupedColorPairs, setGroupedColorPairs] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState(0);
@@ -108,6 +109,7 @@ export default function Home() {
 
             if (response.ok) {
                 console.log("Data saved successfully");
+                setCompleted(true);
             } else {
                 console.error("Failed to save data");
             }
@@ -170,7 +172,7 @@ export default function Home() {
                         />
                     </div>
                 ))}
-
+                {completed && <p className="text-green-600">Thank you!</p>}
                 <button type="submit" className="bg-blue-500 text-white p-2 rounded">Submit</button>
             </form>
         </div>
