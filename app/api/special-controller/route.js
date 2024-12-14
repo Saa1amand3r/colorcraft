@@ -1,40 +1,62 @@
 import connectDB from "@/config/database";
 import ColorCombination from "@/models/ColorCombination";
+import csv from 'csv-parser';
+import fs from 'fs';
 
 export const POST = async (req) => {
     try {
         // Connect to the database
         await connectDB();
 
-        // Parse the incoming JSON data
-        const body = await req.json();
+        // Parse the incoming CSV file
+        const formData = await req.formData();
+        const csvFile = formData.get('file');
 
-        // Loop through the categories and update the ColorCombination table
-        for (const item of body) {
-            const { category, combinations } = item;
-
-            // Update the database for each combination
-            for (const combo of combinations) {
-                const { R1, G1, B1, R2, G2, B2 } = combo;
-
-                // Find and update the matching color combinations
-                await ColorCombination.updateMany(
-                    {
-                        r1: R1,
-                        g1: G1,
-                        b1: B1,
-                        r2: R2,
-                        g2: G2,
-                        b2: B2
-                    },
-                    { $set: { special: true } }
-                );
-            }
+        if (!csvFile) {
+            return new Response(
+                JSON.stringify({ error: "No file uploaded" }),
+                { status: 400 }
+            );
         }
 
-        return new Response(JSON.stringify({ message: "Update successful" }), {
-            status: 200,
-        });
+        // Create a stream from the uploaded file and parse it using csv-parser
+        const fileStream = csvFile.stream();
+        const results = [];
+
+        fileStream.pipe(csv())
+            .on('data', (row) => {
+                // Process each row in the CSV (extracting color combinations)
+                const { R1, G1, B1, R2, G2, B2 } = row;
+                results.push({ R1, G1, B1, R2, G2, B2 });
+            })
+            .on('end', async () => {
+                // Once the CSV is parsed, process the data
+                for (const { R1, G1, B1, R2, G2, B2 } of results) {
+                    // Update the database for each combination
+                    await ColorCombination.updateMany(
+                        {
+                            r1: parseInt(R1),
+                            g1: parseInt(G1),
+                            b1: parseInt(B1),
+                            r2: parseInt(R2),
+                            g2: parseInt(G2),
+                            b2: parseInt(B2)
+                        },
+                        { $set: { special: true } }
+                    );
+                }
+
+                return new Response(JSON.stringify({ message: "Update successful" }), {
+                    status: 200,
+                });
+            })
+            .on('error', (error) => {
+                console.error("Error parsing the CSV:", error);
+                return new Response(
+                    JSON.stringify({ error: "Failed to parse the CSV file" }),
+                    { status: 500 }
+                );
+            });
     } catch (error) {
         console.error("Error updating the database:", error);
         return new Response(
@@ -43,7 +65,6 @@ export const POST = async (req) => {
         );
     }
 };
-
 
 export const GET = async () => {
     try {
