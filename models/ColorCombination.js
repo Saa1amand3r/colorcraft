@@ -9,6 +9,7 @@ const ColorCombinationSchema = new Schema({
     r2: { type: Number, required: true },
     g2: { type: Number, required: true },
     b2: { type: Number, required: true },
+    special: {type:Boolean, default: false},
 }, {
     timestamps: true
 });

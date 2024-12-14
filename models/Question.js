@@ -11,7 +11,7 @@ const QuestionSchema = new Schema({
     informal: { type: Number, required: true },
     basic: { type: Number, required: true },
     extravagant: { type: Number, required: true },
-    userId: { type: Number, required: true }  // New field to store userId
+    userId: { type: Number, required: true },  // New field to store userId
 }, {
     timestamps: true
 });
