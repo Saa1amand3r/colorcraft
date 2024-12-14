@@ -1,6 +1,7 @@
 import connectDB from "@/config/database";
 import ColorCombination from "@/models/ColorCombination";
 import csv from 'csv-parser';
+import { Readable } from 'stream';
 
 export const POST = async (req) => {
     try {
@@ -18,10 +19,12 @@ export const POST = async (req) => {
             );
         }
 
-        // Create a stream from the uploaded file and parse it using csv-parser
-        const fileStream = csvFile.stream();
+        // Ensure the file is readable as a stream
+        const fileStream = csvFile.stream ? csvFile.stream() : Readable.from(csvFile);
+
         const results = [];
 
+        // Create a stream from the uploaded file and parse it using csv-parser
         fileStream.pipe(csv())
             .on('data', (row) => {
                 try {
