@@ -19,19 +19,27 @@ export const POST = async (req) => {
             );
         }
 
-        // Ensure the file is readable as a stream
-        const fileStream = csvFile.stream ? csvFile.stream() : Readable.from(csvFile);
+        // Check if csvFile is a readable stream or a buffer
+        let fileStream;
+        if (csvFile.stream) {
+            // If it's already a stream
+            fileStream = csvFile.stream();
+        } else {
+            // If it's a buffer, convert it to a stream
+            fileStream = Readable.from(csvFile);
+        }
 
         const results = [];
 
-        // Create a stream from the uploaded file and parse it using csv-parser
-        fileStream.pipe(csv())
+        // Pipe the file stream into csv-parser
+        fileStream
+            .pipe(csv())
             .on('data', (row) => {
                 try {
-                    // Ensure that each row is valid and parse the numbers
+                    // Ensure each row is processed correctly
                     const { R1, G1, B1, R2, G2, B2 } = row;
 
-                    // Convert values to integers
+                    // Parse the numbers
                     const parsedRow = {
                         R1: parseInt(R1, 10),
                         G1: parseInt(G1, 10),
@@ -59,10 +67,9 @@ export const POST = async (req) => {
                 }
             })
             .on('end', async () => {
-                // Once the CSV is parsed, process the data
-                for (const { R1, G1, B1, R2, G2, B2 } of results) {
-                    try {
-                        // Update the database for each valid combination
+                try {
+                    // Once CSV is parsed, process the data and update the database
+                    for (const { R1, G1, B1, R2, G2, B2 } of results) {
                         await ColorCombination.updateMany(
                             {
                                 r1: R1,
@@ -74,14 +81,17 @@ export const POST = async (req) => {
                             },
                             { $set: { special: true } }
                         );
-                    } catch (error) {
-                        console.error("Error updating database:", error);
                     }
+                    return new Response(JSON.stringify({ message: "Update successful" }), {
+                        status: 200,
+                    });
+                } catch (err) {
+                    console.error("Error updating the database:", err);
+                    return new Response(
+                        JSON.stringify({ error: "Failed to update the database" }),
+                        { status: 500 }
+                    );
                 }
-
-                return new Response(JSON.stringify({ message: "Update successful" }), {
-                    status: 200,
-                });
             })
             .on('error', (error) => {
                 console.error("Error parsing the CSV:", error);
