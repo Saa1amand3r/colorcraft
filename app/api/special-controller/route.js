@@ -7,7 +7,7 @@ export const POST = async (req) => {
         // Connect to the database
         await connectDB();
 
-        // Parse the incoming CSV file
+        // Parse the incoming form data and get the file
         const formData = await req.formData();
         const csvFile = formData.get('file');
 
@@ -24,25 +24,56 @@ export const POST = async (req) => {
 
         fileStream.pipe(csv())
             .on('data', (row) => {
-                // Process each row in the CSV (extracting color combinations)
-                const { R1, G1, B1, R2, G2, B2 } = row;
-                results.push({ R1, G1, B1, R2, G2, B2 });
+                try {
+                    // Ensure that each row is valid and parse the numbers
+                    const { R1, G1, B1, R2, G2, B2 } = row;
+
+                    // Convert values to integers
+                    const parsedRow = {
+                        R1: parseInt(R1, 10),
+                        G1: parseInt(G1, 10),
+                        B1: parseInt(B1, 10),
+                        R2: parseInt(R2, 10),
+                        G2: parseInt(G2, 10),
+                        B2: parseInt(B2, 10)
+                    };
+
+                    // Only add valid rows with valid integer values
+                    if (
+                        !isNaN(parsedRow.R1) &&
+                        !isNaN(parsedRow.G1) &&
+                        !isNaN(parsedRow.B1) &&
+                        !isNaN(parsedRow.R2) &&
+                        !isNaN(parsedRow.G2) &&
+                        !isNaN(parsedRow.B2)
+                    ) {
+                        results.push(parsedRow);
+                    } else {
+                        console.warn(`Skipping invalid row: ${JSON.stringify(row)}`);
+                    }
+                } catch (err) {
+                    console.error(`Error processing row: ${err}`);
+                }
             })
             .on('end', async () => {
                 // Once the CSV is parsed, process the data
                 for (const { R1, G1, B1, R2, G2, B2 } of results) {
-                    // Update the database for each combination
-                    await ColorCombination.updateMany(
-                        {
-                            r1: parseInt(R1),
-                            g1: parseInt(G1),
-                            b1: parseInt(B1),
-                            r2: parseInt(R2),
-                            g2: parseInt(G2),
-                            b2: parseInt(B2)
-                        },
-                        { $set: { special: true } }
-                    );
+                    try {
+                        // Update the database for each valid combination
+                        await ColorCombination.updateMany(
+                            {
+                                r1: R1,
+                                g1: G1,
+                                b1: B1,
+                                r2: R2,
+                                g2: G2,
+                                b2: B2
+                            },
+                            { $set: { special: true } }
+                        );
+                    } catch (error) {
+                        console.error("Error updating database:", error);
+                    }
                 }
 
                 return new Response(JSON.stringify({ message: "Update successful" }), {
