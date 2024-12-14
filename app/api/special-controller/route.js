@@ -1,7 +1,6 @@
 import connectDB from "@/config/database";
 import ColorCombination from "@/models/ColorCombination";
 import csv from 'csv-parser';
-import fs from 'fs';
 
 export const POST = async (req) => {
     try {
